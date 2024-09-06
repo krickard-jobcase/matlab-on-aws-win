@@ -1,4 +1,13 @@
 # Copyright 2024 The MathWorks, Inc.
+packer {
+  required_plugins {
+    amazon = {
+      source  = "github.com/hashicorp/amazon"
+      version = "~> 1"
+    }
+  }
+}
+
 
 variable "RELEASE" {
   type        = string
@@ -92,7 +101,7 @@ variable "MATLAB_SOURCE_URL" {
 # The following variables share the same setup across all MATLAB releases.
 variable "VPC_ID" {
   type        = string
-  default     = ""
+  default     = "vpc-0544b8c2885534d28"
   description = "The target AWS VPC to be used by Packer. If not specified, Packer will use default VPC."
 
   validation {
@@ -103,7 +112,7 @@ variable "VPC_ID" {
 
 variable "SUBNET_ID" {
   type        = string
-  default     = ""
+  default     = "subnet-04500c5eda6fa526c"
   description = "The target subnet to be used by Packer. If not specified, Packer will use the subnet that has the most free IP addresses."
 
   validation {
@@ -115,7 +124,7 @@ variable "SUBNET_ID" {
 variable "INSTANCE_TAGS" {
   type = map(string)
   default = {
-    Name  = "Packer Builder"
+    Name  = "Doc_study Mathlab Server"
     Build = "MATLAB"
   }
   description = "The tags Packer adds to the machine image builder."
@@ -128,6 +137,7 @@ variable "AMI_TAGS" {
     Build    = "MATLAB"
     Type     = "matlab-on-aws"
     Platform = "Windows"
+    project = "doc_study"
     Base_AMI_ID = "{{ .SourceAMI }}"
     Base_AMI_Name = "{{ .SourceAMIName }}"
   }
@@ -186,21 +196,28 @@ source "amazon-ebs" "AMI_Builder" {
     max_attempts  = 240
   }
   communicator  = "winrm"
-  instance_type = "g4dn.xlarge"
+  instance_type = "g4dn.12xlarge"
   launch_block_device_mappings {
     delete_on_termination = true
     device_name           = "/dev/sda1"
     volume_size           = 128
     volume_type           = "gp2"
   }
-  region                                    = "us-east-1"
+   # Additional 10 TB volume
+  launch_block_device_mappings {
+    delete_on_termination = true
+    device_name           = "/dev/sdb"  # This is the second volume
+    volume_size           = 10240  # 10 TB volume
+    volume_type           = "gp2"
+  }
+  region                  = "us-gov-west-1"
   source_ami_filter {
     filters = {
       "virtualization-type" = "hvm"
       "name" = "${var.BASE_AMI_NAME}"
       "root-device-type" = "ebs"
     } 
-    owners = ["801119661308"] # Owner ID associated with Windows Server AMIs
+    owners = ["077303321853"] # Owner ID associated with Windows Server AMIs
     most_recent = true
   }
   subnet_id                                 = "${var.SUBNET_ID}"
@@ -229,8 +246,6 @@ source "amazon-ebs" "AMI_Builder" {
       Resource = ["*"]
     }
   }
-
-}
 
 build {
   sources = ["source.amazon-ebs.AMI_Builder"]
