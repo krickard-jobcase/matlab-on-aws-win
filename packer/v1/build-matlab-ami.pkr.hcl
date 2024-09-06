@@ -203,14 +203,15 @@ source "amazon-ebs" "AMI_Builder" {
     volume_size           = 128
     volume_type           = "gp2"
   }
-   # Additional 10 TB volume
+  
+  # Additional 10 TB volume
   launch_block_device_mappings {
     delete_on_termination = true
     device_name           = "/dev/sdb"  # This is the second volume
     volume_size           = 10240  # 10 TB volume
     volume_type           = "gp2"
   }
-  region                  = "us-gov-west-1"
+  region                                    = "us-gov-west-1"
   source_ami_filter {
     filters = {
       "virtualization-type" = "hvm"
@@ -246,6 +247,8 @@ source "amazon-ebs" "AMI_Builder" {
       Resource = ["*"]
     }
   }
+
+}
 
 build {
   sources = ["source.amazon-ebs.AMI_Builder"]
